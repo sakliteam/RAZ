@@ -63,9 +63,9 @@ else
 fi
 
 ###############################################################################
-# 2. PYTHON
+# 3. PYTHON
 ###############################################################################
-log_info "Stap 2/9: Python installeren..."
+log_info "Stap 3/9: Python installeren..."
 apt-get install -y python3 python3-pip python3-venv
 log_success "Python geïnstalleerd"
 
