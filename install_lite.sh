@@ -54,7 +54,7 @@ log_success "Systeem bijgewerkt"
 ###############################################################################
 # 2. FFMPEG
 ###############################################################################
-log_info "Stap 2/9: FFmpeg installeren..."
+log_info "Stap 2/10: FFmpeg installeren..."
 if command -v ffmpeg &> /dev/null; then
     log_warning "FFmpeg is al geïnstalleerd"
 else
