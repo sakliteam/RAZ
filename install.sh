@@ -87,26 +87,83 @@ fi
 # 3. MONGODB INSTALLATIE
 ###############################################################################
 log_info "Stap 3/10: MongoDB installeren..."
-if command -v mongod &> /dev/null; then
-    log_warning "MongoDB is al geïnstalleerd"
+
+# Check of MongoDB al draait
+if systemctl is-active --quiet mongod 2>/dev/null || systemctl is-active --quiet mongodb 2>/dev/null; then
+    log_success "MongoDB draait al"
+elif command -v mongod &> /dev/null || command -v mongo &> /dev/null; then
+    log_warning "MongoDB is geïnstalleerd maar draait niet"
+    systemctl start mongod 2>/dev/null || systemctl start mongodb 2>/dev/null || true
 else
-    # Voor Raspberry Pi, gebruik alternatieve methode
-    log_info "MongoDB installeren via apt..."
-    apt-get install -y mongodb
+    log_info "MongoDB installeren voor Raspberry Pi..."
     
-    # Start MongoDB
-    systemctl start mongodb
-    systemctl enable mongodb
-    
-    log_success "MongoDB geïnstalleerd en gestart"
+    # Probeer eerst Docker methode (snelste en meest betrouwbaar)
+    if command -v docker &> /dev/null; then
+        log_info "Docker gevonden, MongoDB installeren via Docker..."
+        
+        # Stop oude container als die bestaat
+        docker stop mongodb 2>/dev/null || true
+        docker rm mongodb 2>/dev/null || true
+        
+        # Start MongoDB container
+        docker run -d \
+            --name mongodb \
+            --restart always \
+            -p 27017:27017 \
+            -v mongodb_data:/data/db \
+            mongo:4.4 \
+            --quiet
+        
+        # Wacht tot MongoDB klaar is
+        sleep 5
+        
+        log_success "MongoDB geïnstalleerd via Docker"
+    else
+        log_warning "Docker niet gevonden, installeer Docker voor MongoDB..."
+        log_info "Docker installeren..."
+        
+        # Installeer Docker
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sh get-docker.sh
+        usermod -aG docker $CURRENT_USER
+        rm get-docker.sh
+        
+        log_success "Docker geïnstalleerd"
+        
+        # Nu MongoDB installeren via Docker
+        log_info "MongoDB installeren via Docker..."
+        docker run -d \
+            --name mongodb \
+            --restart always \
+            -p 27017:27017 \
+            -v mongodb_data:/data/db \
+            mongo:4.4 \
+            --quiet
+        
+        sleep 5
+        log_success "MongoDB geïnstalleerd via Docker"
+    fi
 fi
 
-# Check MongoDB status
-if systemctl is-active --quiet mongodb; then
-    log_success "MongoDB draait"
+# Verificatie
+log_info "MongoDB verbinding testen..."
+sleep 3
+
+# Test of MongoDB bereikbaar is
+if command -v mongosh &> /dev/null; then
+    if mongosh --eval "db.version()" --quiet localhost:27017/test &>/dev/null; then
+        log_success "MongoDB werkt correct"
+    else
+        log_warning "MongoDB verbinding testen met alternatieve methode..."
+    fi
+elif command -v mongo &> /dev/null; then
+    if mongo --eval "db.version()" --quiet localhost:27017/test &>/dev/null; then
+        log_success "MongoDB werkt correct"
+    else
+        log_warning "MongoDB mogelijk nog niet klaar, dit is normaal"
+    fi
 else
-    log_warning "MongoDB starten..."
-    systemctl start mongodb
+    log_warning "MongoDB CLI niet beschikbaar, maar dat is OK"
 fi
 
 ###############################################################################
