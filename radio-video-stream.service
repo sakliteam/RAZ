@@ -1,0 +1,21 @@
+[Unit]
+Description=Radio to Video Stream Backend Service
+After=network.target mongodb.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/app/backend
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/usr/bin/python3 -m uvicorn server:app --host 0.0.0.0 --port 8001
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=radio-video-stream
+
+[Install]
+WantedBy=multi-user.target
