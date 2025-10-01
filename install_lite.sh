@@ -336,7 +336,7 @@ log_success "Frontend dependencies geïnstalleerd"
 ###############################################################################
 # 8. ENVIRONMENT
 ###############################################################################
-log_info "Stap 7/9: Environment configureren..."
+log_info "Stap 7/10: Environment configureren..."
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 
 cd $SCRIPT_DIR/frontend
