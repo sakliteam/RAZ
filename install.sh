@@ -341,9 +341,24 @@ systemctl enable reinier-frontend.service
 log_success "Services geactiveerd"
 
 ###############################################################################
-# 10. SERVICES STARTEN
+# 10. FIX PERMISSIONS
 ###############################################################################
-log_info "Stap 10/10: Services starten..."
+log_info "Stap 10/11: Bestandspermissies aanpassen..."
+
+# Change ownership to current user
+chown -R $CURRENT_USER:$CURRENT_USER $SCRIPT_DIR
+
+# Ensure cache directory exists with correct permissions
+mkdir -p $SCRIPT_DIR/frontend/node_modules/.cache 2>/dev/null || true
+chown -R $CURRENT_USER:$CURRENT_USER $SCRIPT_DIR/frontend/node_modules/.cache 2>/dev/null || true
+chmod -R 755 $SCRIPT_DIR/frontend/node_modules/.cache 2>/dev/null || true
+
+log_success "Permissies aangepast"
+
+###############################################################################
+# 11. SERVICES STARTEN
+###############################################################################
+log_info "Stap 11/11: Services starten..."
 
 # Start backend
 systemctl start reinier-backend.service
