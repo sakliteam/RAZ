@@ -320,7 +320,16 @@ log_success "Lite backend server aangemaakt (zonder MongoDB)"
 ###############################################################################
 log_info "Stap 6/8: Frontend dependencies..."
 cd $SCRIPT_DIR/frontend
+
+# Fix React Router version for Node 18 compatibility
+log_info "React Router versie aanpassen voor Node 18 compatibiliteit..."
+if grep -q '"react-router-dom": "\^7' package.json; then
+    sed -i 's/"react-router-dom": "\^7[^"]*"/"react-router-dom": "^6.28.0"/g' package.json
+    log_success "React Router versie aangepast naar v6 (Node 18 compatibel)"
+fi
+
 rm -rf node_modules 2>/dev/null || true
+rm -rf yarn.lock 2>/dev/null || true
 yarn install
 log_success "Frontend dependencies geïnstalleerd"
 
