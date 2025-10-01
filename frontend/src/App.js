@@ -18,9 +18,11 @@ function App() {
   const [settings, setSettings] = useState({
     radio_url: "",
     resolution: "720p",
-    output_mode: "unicast",
+    output_mode: "multicast",
+    unicast_ip: "127.0.0.1:5000",
     multicast_address: "239.255.0.1:5000",
-    datetime_format: "%Y-%m-%d %H:%M:%S"
+    font_size: 72,
+    font_color: "white"
   });
   
   const [status, setStatus] = useState({
@@ -49,7 +51,7 @@ function App() {
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch settings:", error);
-      toast.error("Ayarlar yüklenemedi");
+      toast.error("Kan instellingen niet laden");
       setLoading(false);
     }
   };
@@ -65,7 +67,7 @@ function App() {
 
   const updateSettings = async () => {
     if (status.is_running) {
-      toast.error("Yayın durdurulmadan ayarlar değiştirilemez!");
+      toast.error("Stop eerst de stream voordat u instellingen wijzigt!");
       return;
     }
 
@@ -73,10 +75,10 @@ function App() {
     try {
       const response = await axios.post(`${API}/settings`, settings);
       setSettings(response.data);
-      toast.success("Ayarlar başarıyla güncellendi!");
+      toast.success("Instellingen succesvol bijgewerkt!");
     } catch (error) {
       console.error("Failed to update settings:", error);
-      toast.error("Ayarlar güncellenemedi");
+      toast.error("Kan instellingen niet bijwerken");
     } finally {
       setActionLoading(false);
     }
@@ -87,11 +89,11 @@ function App() {
     try {
       const response = await axios.post(`${API}/start`);
       setStatus(response.data);
-      toast.success("Yayın başlatıldı!");
+      toast.success("Stream gestart!");
       await fetchStatus();
     } catch (error) {
       console.error("Failed to start stream:", error);
-      toast.error(error.response?.data?.detail || "Yayın başlatılamadı");
+      toast.error(error.response?.data?.detail || "Kan stream niet starten");
     } finally {
       setActionLoading(false);
     }
@@ -102,11 +104,11 @@ function App() {
     try {
       const response = await axios.post(`${API}/stop`);
       setStatus(response.data);
-      toast.success("Yayın durduruldu!");
+      toast.success("Stream gestopt!");
       await fetchStatus();
     } catch (error) {
       console.error("Failed to stop stream:", error);
-      toast.error("Yayın durdurulamadı");
+      toast.error("Kan stream niet stoppen");
     } finally {
       setActionLoading(false);
     }
@@ -115,7 +117,7 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
       </div>
     );
   }
@@ -127,15 +129,15 @@ function App() {
         <div className="text-center space-y-4 py-8">
           <div className="flex items-center justify-center gap-3">
             <div className="icon-wrapper">
-              <Radio className="w-12 h-12 text-cyan-400" />
+              <Radio className="w-12 h-12 text-orange-400" />
             </div>
-            <Video className="w-12 h-12 text-emerald-400" />
+            <Video className="w-12 h-12 text-blue-400" />
           </div>
           <h1 className="main-title">
-            Radyo Video Yayın Sistemi
+            Reinier de Graaf Radio Server
           </h1>
           <p className="subtitle">
-            FFmpeg ile radyo akışını canlı video kanalına dönüştürün
+            FFmpeg radio naar live video kanaal converter
           </p>
         </div>
 
@@ -149,7 +151,7 @@ function App() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">
-                    {status.is_running ? "Yayın Aktif" : "Yayın Durdu"}
+                    {status.is_running ? "Stream Actief" : "Stream Gestopt"}
                   </h3>
                   <p className="text-sm text-gray-400 mt-1">
                     {status.message}
@@ -161,12 +163,15 @@ function App() {
                   )}
                 </div>
               </div>
-              <Badge 
-                variant={status.is_running ? "default" : "secondary"}
-                className={status.is_running ? "badge-active" : "badge-inactive"}
-              >
-                {status.is_running ? "LIVE" : "OFF"}
-              </Badge>
+              {status.is_running ? (
+                <div className="on-air-badge">
+                  <span className="on-air-text">ON AIR</span>
+                </div>
+              ) : (
+                <Badge variant="secondary" className="badge-inactive">
+                  OFF AIR
+                </Badge>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -178,16 +183,16 @@ function App() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5" />
-                Yayın Ayarları
+                Stream Instellingen
               </CardTitle>
               <CardDescription>
-                FFmpeg ve yayın parametrelerini yapılandırın
+                Configureer FFmpeg en stream parameters
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Radio URL */}
               <div className="space-y-2">
-                <Label htmlFor="radio_url">Radyo Akış URL'si</Label>
+                <Label htmlFor="radio_url">Radio Stream URL</Label>
                 <Input
                   id="radio_url"
                   data-testid="radio-url-input"
@@ -200,7 +205,7 @@ function App() {
 
               {/* Resolution */}
               <div className="space-y-2">
-                <Label htmlFor="resolution">Video Çözünürlüğü</Label>
+                <Label htmlFor="resolution">Video Resolutie Profiel</Label>
                 <Select
                   value={settings.resolution}
                   onValueChange={(value) => setSettings({...settings, resolution: value})}
@@ -220,7 +225,7 @@ function App() {
               {/* Output Mode */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="output_mode">Multicast Modu</Label>
+                  <Label htmlFor="output_mode">Multicast Modus</Label>
                   <Switch
                     id="output_mode"
                     data-testid="output-mode-switch"
@@ -232,14 +237,32 @@ function App() {
                   />
                 </div>
                 <p className="text-xs text-gray-400">
-                  {settings.output_mode === "multicast" ? "Multicast aktif" : "Unicast aktif"}
+                  {settings.output_mode === "multicast" ? "Multicast actief" : "Unicast actief"}
                 </p>
               </div>
+
+              {/* Unicast IP */}
+              {settings.output_mode === "unicast" && (
+                <div className="space-y-2">
+                  <Label htmlFor="unicast_ip">Unicast IP:Poort</Label>
+                  <Input
+                    id="unicast_ip"
+                    data-testid="unicast-ip-input"
+                    value={settings.unicast_ip}
+                    onChange={(e) => setSettings({...settings, unicast_ip: e.target.value})}
+                    placeholder="192.168.1.100:5000"
+                    disabled={status.is_running}
+                  />
+                  <p className="text-xs text-gray-400">
+                    Voer het IP-adres en poort van de doelmachine in
+                  </p>
+                </div>
+              )}
 
               {/* Multicast Address */}
               {settings.output_mode === "multicast" && (
                 <div className="space-y-2">
-                  <Label htmlFor="multicast_address">Multicast Adresi</Label>
+                  <Label htmlFor="multicast_address">Multicast Adres</Label>
                   <Input
                     id="multicast_address"
                     data-testid="multicast-address-input"
@@ -251,20 +274,51 @@ function App() {
                 </div>
               )}
 
-              {/* DateTime Format */}
+              {/* Font Size */}
               <div className="space-y-2">
-                <Label htmlFor="datetime_format">Tarih/Saat Formatı</Label>
-                <Input
-                  id="datetime_format"
-                  data-testid="datetime-format-input"
-                  value={settings.datetime_format}
-                  onChange={(e) => setSettings({...settings, datetime_format: e.target.value})}
-                  placeholder="%Y-%m-%d %H:%M:%S"
-                  disabled={status.is_running}
-                />
-                <p className="text-xs text-gray-400">
-                  strftime formatı kullanın
-                </p>
+                <Label htmlFor="font_size">Lettergrootte (TV overlay)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="font_size"
+                    data-testid="font-size-input"
+                    type="number"
+                    min="24"
+                    max="200"
+                    value={settings.font_size}
+                    onChange={(e) => setSettings({...settings, font_size: parseInt(e.target.value)})}
+                    disabled={status.is_running}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-gray-400">px</span>
+                </div>
+              </div>
+
+              {/* Font Color */}
+              <div className="space-y-2">
+                <Label htmlFor="font_color">Tekstkleur (TV overlay)</Label>
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={settings.font_color}
+                    onValueChange={(value) => setSettings({...settings, font_color: value})}
+                    disabled={status.is_running}
+                  >
+                    <SelectTrigger data-testid="font-color-select" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="white">Wit</SelectItem>
+                      <SelectItem value="yellow">Geel</SelectItem>
+                      <SelectItem value="cyan">Cyaan</SelectItem>
+                      <SelectItem value="lime">Lime</SelectItem>
+                      <SelectItem value="orange">Oranje</SelectItem>
+                      <SelectItem value="red">Rood</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div 
+                    className="w-12 h-10 rounded border-2 border-gray-600"
+                    style={{ backgroundColor: settings.font_color }}
+                  ></div>
+                </div>
               </div>
 
               {/* Update Button */}
@@ -277,10 +331,10 @@ function App() {
                 {actionLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Güncelleniyor...
+                    Bijwerken...
                   </>
                 ) : (
-                  "Ayarları Kaydet"
+                  "Instellingen Opslaan"
                 )}
               </Button>
             </CardContent>
@@ -289,27 +343,41 @@ function App() {
           {/* Control Card */}
           <Card className="control-card">
             <CardHeader>
-              <CardTitle>Yayın Kontrolü</CardTitle>
+              <CardTitle>Stream Besturing</CardTitle>
               <CardDescription>
-                Canlı yayını başlatın veya durdurun
+                Start of stop de live uitzending
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="control-info">
                 <div className="info-item">
-                  <span className="info-label">Çözünürlük:</span>
+                  <span className="info-label">Resolutie:</span>
                   <span className="info-value">{settings.resolution}</span>
                 </div>
                 <div className="info-item">
-                  <span className="info-label">Mod:</span>
+                  <span className="info-label">Modus:</span>
                   <span className="info-value capitalize">{settings.output_mode}</span>
                 </div>
-                {settings.output_mode === "multicast" && (
-                  <div className="info-item">
-                    <span className="info-label">Adres:</span>
-                    <span className="info-value font-mono text-sm">{settings.multicast_address}</span>
+                <div className="info-item">
+                  <span className="info-label">Adres:</span>
+                  <span className="info-value font-mono text-sm">
+                    {settings.output_mode === "multicast" ? settings.multicast_address : settings.unicast_ip}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Lettergrootte:</span>
+                  <span className="info-value">{settings.font_size}px</span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">Kleur:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="info-value capitalize">{settings.font_color}</span>
+                    <div 
+                      className="w-6 h-6 rounded border border-gray-600"
+                      style={{ backgroundColor: settings.font_color }}
+                    ></div>
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -324,12 +392,12 @@ function App() {
                     {actionLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Başlatılıyor...
+                        Starten...
                       </>
                     ) : (
                       <>
                         <Play className="w-5 h-5 mr-2" />
-                        Yayını Başlat
+                        Stream Starten
                       </>
                     )}
                   </Button>
@@ -344,12 +412,12 @@ function App() {
                     {actionLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Durduruluyor...
+                        Stoppen...
                       </>
                     ) : (
                       <>
                         <Square className="w-5 h-5 mr-2" />
-                        Yayını Durdur
+                        Stream Stoppen
                       </>
                     )}
                   </Button>
@@ -358,7 +426,7 @@ function App() {
 
               <div className="warning-box">
                 <p className="text-sm">
-                  ⚠️ Yayın başlatılmadan önce FFmpeg'in sisteminizde kurulu olduğundan emin olun.
+                  ⚠️ Zorg ervoor dat FFmpeg is geïnstalleerd voordat u de stream start.
                 </p>
               </div>
             </CardContent>
@@ -368,13 +436,13 @@ function App() {
         {/* Info Panel */}
         <Card className="info-card">
           <CardHeader>
-            <CardTitle>Sistem Bilgileri</CardTitle>
+            <CardTitle>Systeeminformatie</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4 text-sm">
               <div>
-                <p className="text-gray-400 mb-1">Platform</p>
-                <p className="font-semibold">Raspberry Pi / Linux</p>
+                <p className="text-gray-400 mb-1">Locatie</p>
+                <p className="font-semibold">Delft, Nederland</p>
               </div>
               <div>
                 <p className="text-gray-400 mb-1">Video Codec</p>

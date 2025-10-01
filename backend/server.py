@@ -34,17 +34,21 @@ class StreamSettings(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     radio_url: str = "https://op25-par.streamabc.net/hls/d3ep2fcbnhfc72r905fg/redbm-razo-mp3-192-3960759.m3u8"
     resolution: str = "720p"  # 540p, 720p, 1080p
-    output_mode: str = "unicast"  # unicast or multicast
-    multicast_address: str = "239.255.0.1:5000"
-    datetime_format: str = "%Y-%m-%d %H:%M:%S"
+    output_mode: str = "multicast"  # unicast or multicast (default: multicast)
+    unicast_ip: str = "127.0.0.1:5000"  # For unicast mode
+    multicast_address: str = "239.255.0.1:5000"  # For multicast mode
+    font_size: int = 72  # Font size for datetime text
+    font_color: str = "white"  # Font color for datetime text
     is_running: bool = False
 
 class StreamSettingsUpdate(BaseModel):
     radio_url: Optional[str] = None
     resolution: Optional[str] = None
     output_mode: Optional[str] = None
+    unicast_ip: Optional[str] = None
     multicast_address: Optional[str] = None
-    datetime_format: Optional[str] = None
+    font_size: Optional[int] = None
+    font_color: Optional[str] = None
 
 class StreamStatus(BaseModel):
     is_running: bool
@@ -64,14 +68,15 @@ def get_resolution_dimensions(resolution: str) -> str:
 def build_ffmpeg_command(settings: StreamSettings) -> list:
     resolution_dim = get_resolution_dimensions(settings.resolution)
     
-    # Output URL based on mode
+    # Determine output URL based on mode
     if settings.output_mode == "multicast":
         output_url = f"udp://{settings.multicast_address}?pkt_size=1316"
     else:
-        # For unicast, we'll use a local file or stream
-        output_url = f"udp://127.0.0.1:5000?pkt_size=1316"
+        # Unicast mode
+        output_url = f"udp://{settings.unicast_ip}?pkt_size=1316"
     
-    # Build FFmpeg command
+    # Build FFmpeg command with timezone set to Europe/Amsterdam (Delft, Holland)
+    # Format: Day DD Month YYYY HH:MM:SS
     cmd = [
         'ffmpeg',
         '-re',  # Read input at native frame rate
@@ -79,7 +84,9 @@ def build_ffmpeg_command(settings: StreamSettings) -> list:
         '-f', 'lavfi',
         '-i', f'color=c=black:s={resolution_dim}:r=25',  # Black background video
         '-filter_complex',
-        f"[1:v]drawtext=text='%{{localtime\\:{settings.datetime_format}}}':fontsize=72:fontcolor=white:x=(w-tw)/2:y=(h-th)/2:box=1:boxcolor=black@0.5:boxborderw=10[v]",
+        f"[1:v]drawtext=text='Reinier de Graaf Radio Server':fontsize={int(settings.font_size * 0.6)}:fontcolor={settings.font_color}:x=(w-tw)/2:y=50:box=1:boxcolor=black@0.6:boxborderw=8,"
+        f"drawtext=text='%{{localtime\\:%A %d %B %Y %H\\:%M\\:%S}}':fontsize={settings.font_size}:fontcolor={settings.font_color}:x=(w-tw)/2:y=(h-th)/2:box=1:boxcolor=black@0.6:boxborderw=10,"
+        f"drawtext=text='Delft, Nederland':fontsize={int(settings.font_size * 0.5)}:fontcolor={settings.font_color}:x=(w-tw)/2:y=h-80:box=1:boxcolor=black@0.6:boxborderw=8[v]",
         '-map', '[v]',
         '-map', '0:a',
         '-c:v', 'libx264',
@@ -109,7 +116,7 @@ async def startup_event():
 # API Routes
 @api_router.get("/")
 async def root():
-    return {"message": "Radio to Video Stream System"}
+    return {"message": "Reinier de Graaf Radio Server"}
 
 @api_router.get("/settings", response_model=StreamSettings)
 async def get_settings():
@@ -139,7 +146,7 @@ async def update_settings(update: StreamSettingsUpdate):
     if current.get('is_running', False):
         raise HTTPException(
             status_code=400,
-            detail="Cannot update settings while stream is running. Please stop the stream first."
+            detail="Kan instellingen niet bijwerken terwijl stream actief is. Stop eerst de stream."
         )
     
     # Update in database
@@ -158,13 +165,13 @@ async def start_stream():
         return StreamStatus(
             is_running=True,
             pid=ffmpeg_process.pid,
-            message="Stream is already running"
+            message="Stream is al actief"
         )
     
     # Get settings
     settings_doc = await db.stream_settings.find_one()
     if not settings_doc:
-        raise HTTPException(status_code=404, detail="Settings not found")
+        raise HTTPException(status_code=404, detail="Instellingen niet gevonden")
     
     settings = StreamSettings(**settings_doc)
     
@@ -172,12 +179,17 @@ async def start_stream():
     cmd = build_ffmpeg_command(settings)
     
     try:
+        # Set timezone environment variable for FFmpeg
+        env = os.environ.copy()
+        env['TZ'] = 'Europe/Amsterdam'
+        
         # Start FFmpeg process
         ffmpeg_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            preexec_fn=os.setsid  # Create new process group
+            preexec_fn=os.setsid,  # Create new process group
+            env=env
         )
         
         # Update running status in database
@@ -192,12 +204,12 @@ async def start_stream():
         return StreamStatus(
             is_running=True,
             pid=ffmpeg_process.pid,
-            message="Stream started successfully"
+            message="Stream succesvol gestart"
         )
     
     except Exception as e:
         logger.error(f"Failed to start stream: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to start stream: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Kan stream niet starten: {str(e)}")
 
 @api_router.post("/stop", response_model=StreamStatus)
 async def stop_stream():
@@ -212,7 +224,7 @@ async def stop_stream():
         return StreamStatus(
             is_running=False,
             pid=None,
-            message="Stream is not running"
+            message="Stream is niet actief"
         )
     
     try:
@@ -240,12 +252,12 @@ async def stop_stream():
         return StreamStatus(
             is_running=False,
             pid=None,
-            message="Stream stopped successfully"
+            message="Stream succesvol gestopt"
         )
     
     except Exception as e:
         logger.error(f"Error stopping stream: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to stop stream: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Kan stream niet stoppen: {str(e)}")
 
 @api_router.get("/status", response_model=StreamStatus)
 async def get_status():
@@ -269,7 +281,7 @@ async def get_status():
     return StreamStatus(
         is_running=is_running,
         pid=ffmpeg_process.pid if is_running else None,
-        message="Stream is running" if is_running else "Stream is stopped"
+        message="Stream is actief" if is_running else "Stream is gestopt"
     )
 
 # Include the router in the main app
