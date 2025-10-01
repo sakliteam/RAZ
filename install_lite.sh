@@ -85,7 +85,7 @@ log_success "Node.js en Yarn geïnstalleerd"
 ###############################################################################
 # 5. BACKEND - LITE VERSION (Zonder MongoDB)
 ###############################################################################
-log_info "Stap 5/9: Backend dependencies (LITE - zonder MongoDB)..."
+log_info "Stap 5/10: Backend dependencies (LITE - zonder MongoDB)..."
 cd $SCRIPT_DIR/backend
 
 # Maak een lite requirements.txt zonder MongoDB
