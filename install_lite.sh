@@ -393,10 +393,45 @@ systemctl daemon-reload
 systemctl enable reinier-backend.service
 systemctl enable reinier-frontend.service
 
+###############################################################################
+# 9. FIX PERMISSIONS
+###############################################################################
+log_info "Stap 8/9: Bestandspermissies aanpassen..."
+
+# Change ownership to current user
+chown -R $CURRENT_USER:$CURRENT_USER $SCRIPT_DIR
+
+# Ensure cache directory exists with correct permissions
+mkdir -p $SCRIPT_DIR/frontend/node_modules/.cache 2>/dev/null || true
+chown -R $CURRENT_USER:$CURRENT_USER $SCRIPT_DIR/frontend/node_modules/.cache 2>/dev/null || true
+chmod -R 755 $SCRIPT_DIR/frontend/node_modules/.cache 2>/dev/null || true
+
+log_success "Permissies aangepast"
+
+###############################################################################
+# 10. SERVICES STARTEN
+###############################################################################
+log_info "Stap 9/9: Services starten..."
+
+# Start backend
 systemctl start reinier-backend.service
 sleep 3
+
+if systemctl is-active --quiet reinier-backend.service; then
+    log_success "Backend service draait"
+else
+    log_error "Backend service kon niet starten. Check logs met: journalctl -u reinier-backend -n 50"
+fi
+
+# Start frontend
 systemctl start reinier-frontend.service
 sleep 3
+
+if systemctl is-active --quiet reinier-frontend.service; then
+    log_success "Frontend service draait"
+else
+    log_error "Frontend service kon niet starten. Check logs met: journalctl -u reinier-frontend -n 50"
+fi
 
 ###############################################################################
 # KLAAR
