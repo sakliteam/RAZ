@@ -72,7 +72,7 @@ log_success "Python geïnstalleerd"
 ###############################################################################
 # 4. NODE.JS
 ###############################################################################
-log_info "Stap 4/9: Node.js installeren..."
+log_info "Stap 4/10: Node.js installeren..."
 if command -v node &> /dev/null; then
     log_warning "Node.js is al geïnstalleerd"
 else
