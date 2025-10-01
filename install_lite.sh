@@ -47,7 +47,7 @@ log_info "Installatie voor gebruiker: $CURRENT_USER"
 ###############################################################################
 # 1. SYSTEEM UPDATE
 ###############################################################################
-log_info "Stap 1/9: Systeem bijwerken..."
+log_info "Stap 1/10: Systeem bijwerken..."
 apt-get update -qq
 log_success "Systeem bijgewerkt"
 
