@@ -109,7 +109,7 @@ deactivate
 log_success "Backend dependencies geïnstalleerd (LITE versie)"
 
 ###############################################################################
-# 6. BACKEND LITE VERSION MAKEN
+# 5. BACKEND LITE VERSION MAKEN
 ###############################################################################
 log_info "Aanpassen backend voor JSON opslag..."
 
