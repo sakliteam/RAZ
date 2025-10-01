@@ -52,9 +52,9 @@ apt-get update -qq
 log_success "Systeem bijgewerkt"
 
 ###############################################################################
-# 1. FFMPEG
+# 2. FFMPEG
 ###############################################################################
-log_info "Stap 1/9: FFmpeg installeren..."
+log_info "Stap 2/9: FFmpeg installeren..."
 if command -v ffmpeg &> /dev/null; then
     log_warning "FFmpeg is al geïnstalleerd"
 else
