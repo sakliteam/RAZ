@@ -334,9 +334,9 @@ yarn install
 log_success "Frontend dependencies geïnstalleerd"
 
 ###############################################################################
-# 8. ENVIRONMENT
+# 7. ENVIRONMENT
 ###############################################################################
-log_info "Stap 7/8: Environment configureren..."
+log_info "Stap 6/9: Environment configureren..."
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 
 cd $SCRIPT_DIR/frontend
