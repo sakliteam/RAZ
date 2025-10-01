@@ -1,6 +1,6 @@
-# 📻 Radyo Video Yayın Sistemi
+# 📻 Reinier de Graaf Radio Server
 
-Raspberry Pi ve Linux sistemler için FFmpeg tabanlı radyo akışı video yayın dönüştürücüsü.
+FFmpeg-gebaseerde radio naar video streaming server voor Raspberry Pi en Linux systemen.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
