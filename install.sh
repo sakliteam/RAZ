@@ -218,11 +218,21 @@ log_success "Backend dependencies geïnstalleerd"
 log_info "Stap 7/10: Frontend dependencies installeren..."
 cd $SCRIPT_DIR/frontend
 
+# Fix React Router version for Node 18 compatibility
+log_info "React Router versie aanpassen voor Node 18 compatibiliteit..."
+if grep -q '"react-router-dom": "\^7' package.json; then
+    sed -i 's/"react-router-dom": "\^7[^"]*"/"react-router-dom": "^6.28.0"/g' package.json
+    log_success "React Router versie aangepast naar v6 (Node 18 compatibel)"
+fi
+
 # Verwijder oude node_modules indien aanwezig
 if [ -d "node_modules" ]; then
     log_warning "Oude node_modules verwijderen..."
     rm -rf node_modules
 fi
+
+# Verwijder yarn.lock om clean install te forceren
+rm -rf yarn.lock 2>/dev/null || true
 
 # Installeer dependencies
 yarn install
