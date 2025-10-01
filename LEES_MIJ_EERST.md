@@ -1,17 +1,28 @@
 # 🚨 LEES DIT EERST! 🚨
 
-## MongoDB Error Fix voor Raspberry Pi
+## ⚡ Veelvoorkomende Errors & Snelle Fixes
 
-Als je deze error krijgt:
+### 1️⃣ MongoDB Error
 ```
 E: Package 'mongodb' has no installation candidate
 ```
-
-**✅ GEBRUIK DE LITE VERSIE!**
-
+**✅ Oplossing: Gebruik LITE versie**
 ```bash
 sudo bash install_lite.sh
 ```
+
+### 2️⃣ Node.js Version Error
+```
+error react-router-dom@7.9.3: The engine "node" is incompatible
+Expected version ">=20.0.0". Got "18.20.8"
+```
+**✅ Oplossing: Fix script uitvoeren**
+```bash
+bash fix_node_version.sh
+sudo bash install_lite.sh
+```
+
+*(Scripts zijn automatisch geüpdatet, maar als je oude versie hebt, gebruik de fix)*
 
 ---
 
