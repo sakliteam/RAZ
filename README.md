@@ -53,58 +53,36 @@ FFmpeg-gebaseerde radio naar video streaming server voor Raspberry Pi en Linux s
 - MongoDB
 - FFmpeg
 
-## 🚀 Hızlı Başlangıç
+## 🚀 Snelle Installatie (Raspberry Pi)
 
-### 1. FFmpeg Kurulumu
-
-```bash
-sudo apt update
-sudo apt install ffmpeg -y
-ffmpeg -version
-```
-
-### 2. MongoDB Kurulumu
+### Automatisch (Aanbevolen)
 
 ```bash
-# MongoDB kurulumu
-sudo apt install mongodb-org -y
+# 1. Ga naar project directory
+cd /pad/naar/reinier-radio-server
 
-# Başlat ve etkinleştir
-sudo systemctl start mongod
-sudo systemctl enable mongod
+# 2. Voer installatie script uit
+sudo bash install.sh
 ```
 
-### 3. Python Bağımlılıkları
+**Klaar!** Het script installeert en configureert automatisch:
+- FFmpeg
+- MongoDB
+- Python dependencies
+- Node.js + Yarn
+- Frontend dependencies
+- Systemd services
 
-```bash
-cd /app/backend
-pip install -r requirements.txt
+### Handmatig
+
+Zie [RASPBERRY_PI_INSTALLATIE.md](RASPBERRY_PI_INSTALLATIE.md) voor gedetailleerde instructies.
+
+### Web Interface
+
+Na installatie, open in je browser:
 ```
-
-### 4. Frontend Bağımlılıkları
-
-```bash
-cd /app/frontend
-npm install
-# veya
-yarn install
+http://[RASPBERRY_PI_IP]:3000
 ```
-
-### 5. Uygulamayı Başlat
-
-**Backend:**
-```bash
-cd /app/backend
-python3 -m uvicorn server:app --host 0.0.0.0 --port 8001
-```
-
-**Frontend:**
-```bash
-cd /app/frontend
-npm start
-```
-
-**Web Panel:** http://localhost:3000
 
 ## 🎮 Kullanım
 
