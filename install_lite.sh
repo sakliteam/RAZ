@@ -70,9 +70,9 @@ apt-get install -y python3 python3-pip python3-venv
 log_success "Python geïnstalleerd"
 
 ###############################################################################
-# 4. NODE.JS
+# 3. NODE.JS
 ###############################################################################
-log_info "Stap 4/8: Node.js installeren..."
+log_info "Stap 3/9: Node.js installeren..."
 if command -v node &> /dev/null; then
     log_warning "Node.js is al geïnstalleerd"
 else
