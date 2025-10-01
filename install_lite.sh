@@ -348,9 +348,9 @@ EOF
 log_success "Environment geconfigureerd"
 
 ###############################################################################
-# 8. SYSTEMD SERVICES
+# 9. SYSTEMD SERVICES
 ###############################################################################
-log_info "Stap 7/9: Systemd services..."
+log_info "Stap 8/9: Systemd services..."
 
 cat > /etc/systemd/system/reinier-backend.service << EOF
 [Unit]
