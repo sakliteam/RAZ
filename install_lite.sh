@@ -411,7 +411,7 @@ log_success "Permissies aangepast"
 ###############################################################################
 # 10. SERVICES STARTEN
 ###############################################################################
-log_info "Stap 9/9: Services starten..."
+log_info "Stap 10/10: Services starten..."
 
 # Start backend
 systemctl start reinier-backend.service
