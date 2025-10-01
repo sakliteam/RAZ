@@ -316,9 +316,9 @@ EOFSERVER
 log_success "Lite backend server aangemaakt (zonder MongoDB)"
 
 ###############################################################################
-# 6. FRONTEND
+# 7. FRONTEND
 ###############################################################################
-log_info "Stap 5/9: Frontend dependencies..."
+log_info "Stap 6/9: Frontend dependencies..."
 cd $SCRIPT_DIR/frontend
 
 # Fix React Router version for Node 18 compatibility
