@@ -396,7 +396,7 @@ systemctl enable reinier-frontend.service
 ###############################################################################
 # 9. FIX PERMISSIONS
 ###############################################################################
-log_info "Stap 8/9: Bestandspermissies aanpassen..."
+log_info "Stap 9/10: Bestandspermissies aanpassen..."
 
 # Change ownership to current user
 chown -R $CURRENT_USER:$CURRENT_USER $SCRIPT_DIR
