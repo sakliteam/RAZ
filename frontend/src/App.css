@@ -309,6 +309,17 @@ input[type="number"]::-webkit-outer-spin-button {
   opacity: 1;
 }
 
+/* Radio Buttons */
+input[type="radio"] {
+  accent-color: #fb923c !important;
+  cursor: pointer;
+}
+
+input[type="radio"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Label */
 label {
   color: #e2e8f0 !important;
