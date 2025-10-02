@@ -99,7 +99,7 @@ def build_ffmpeg_command(settings: StreamSettings) -> list:
     # Get current time for display (will update in real-time via FFmpeg)
     # Simple drawtext - no complex timezone stuff
     cmd = [
-        'ffmpeg',
+        '/usr/bin/ffmpeg',
         '-re',
         '-i', settings.radio_url,
         '-f', 'lavfi',
