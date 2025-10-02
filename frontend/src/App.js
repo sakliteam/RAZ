@@ -417,7 +417,11 @@ function App() {
                 <div className="info-item">
                   <span className="info-label">Adres:</span>
                   <span className="info-value font-mono text-sm">
-                    {settings.output_mode === "multicast" ? settings.multicast_address : settings.unicast_ip}
+                    {settings.output_mode === "multicast" 
+                      ? settings.multicast_address 
+                      : settings.output_mode === "http"
+                      ? `Poort ${settings.http_port}`
+                      : settings.unicast_ip}
                   </span>
                 </div>
                 <div className="info-item">
@@ -435,6 +439,23 @@ function App() {
                   </div>
                 </div>
               </div>
+
+              {/* Stream URL Display */}
+              {status.is_running && status.stream_url && (
+                <div className="stream-url-box">
+                  <p className="text-sm font-semibold text-orange-400 mb-2">
+                    📡 Stream URL:
+                  </p>
+                  <div className="bg-gray-900 p-3 rounded border border-orange-500/30">
+                    <code className="text-xs text-green-400 break-all">
+                      {status.stream_url}
+                    </code>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Open in VLC: Media → Open Network Stream
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-3">
                 {!status.is_running ? (
