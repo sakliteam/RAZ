@@ -11,6 +11,8 @@ import uuid
 import subprocess
 import signal
 import asyncio
+from datetime import datetime
+import pytz
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -34,11 +36,12 @@ class StreamSettings(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     radio_url: str = "https://op25-par.streamabc.net/hls/d3ep2fcbnhfc72r905fg/redbm-razo-mp3-192-3960759.m3u8"
     resolution: str = "720p"  # 540p, 720p, 1080p
-    output_mode: str = "multicast"  # unicast or multicast (default: multicast)
-    unicast_ip: str = "127.0.0.1:5000"  # For unicast mode
-    multicast_address: str = "239.255.0.1:5000"  # For multicast mode
-    font_size: int = 72  # Font size for datetime text
-    font_color: str = "white"  # Font color for datetime text
+    output_mode: str = "multicast"  # unicast, multicast, http
+    unicast_ip: str = "127.0.0.1:5000"
+    multicast_address: str = "239.255.0.1:5000"
+    http_port: int = 8080
+    font_size: int = 72
+    font_color: str = "white"
     is_running: bool = False
 
 class StreamSettingsUpdate(BaseModel):
@@ -47,6 +50,7 @@ class StreamSettingsUpdate(BaseModel):
     output_mode: Optional[str] = None
     unicast_ip: Optional[str] = None
     multicast_address: Optional[str] = None
+    http_port: Optional[int] = None
     font_size: Optional[int] = None
     font_color: Optional[str] = None
 
@@ -54,6 +58,7 @@ class StreamStatus(BaseModel):
     is_running: bool
     pid: Optional[int] = None
     message: str
+    stream_url: Optional[str] = None
 
 # Helper function to get resolution dimensions
 def get_resolution_dimensions(resolution: str) -> str:
@@ -64,29 +69,62 @@ def get_resolution_dimensions(resolution: str) -> str:
     }
     return resolutions.get(resolution, "1280x720")
 
+# Helper function to get server IP
+def get_server_ip() -> str:
+    import socket
+    try:
+        # Connect to external host to determine local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
 # Helper function to build FFmpeg command
 def build_ffmpeg_command(settings: StreamSettings) -> list:
     resolution_dim = get_resolution_dimensions(settings.resolution)
+    server_ip = get_server_ip()
     
     # Determine output URL based on mode
     if settings.output_mode == "multicast":
         output_url = f"udp://{settings.multicast_address}?pkt_size=1316"
+    elif settings.output_mode == "http":
+        output_url = f"http://{server_ip}:{settings.http_port}/stream.ts"
     else:
         # Unicast mode
         output_url = f"udp://{settings.unicast_ip}?pkt_size=1316"
     
-    # Build FFmpeg command with timezone set to Europe/Amsterdam (Delft, Holland)
-    # Format: Day DD Month YYYY HH:MM:SS
+    # Get current time for display (will update in real-time via FFmpeg)
+    # Simple drawtext - no complex timezone stuff
     cmd = [
         'ffmpeg',
-        '-re',  # Read input at native frame rate
-        '-i', settings.radio_url,  # Input radio stream
+        '-re',
+        '-i', settings.radio_url,
         '-f', 'lavfi',
-        '-i', f'color=c=black:s={resolution_dim}:r=25',  # Black background video
+        '-i', f'color=c=black:s={resolution_dim}:r=25',
         '-filter_complex',
-        f"[1:v]drawtext=text='Reinier de Graaf Radio Server':fontsize={int(settings.font_size * 0.6)}:fontcolor={settings.font_color}:x=(w-tw)/2:y=50:box=1:boxcolor=black@0.6:boxborderw=8,"
-        f"drawtext=text='%{{localtime\\:%A %d %B %Y %H\\:%M\\:%S}}':fontsize={settings.font_size}:fontcolor={settings.font_color}:x=(w-tw)/2:y=(h-th)/2:box=1:boxcolor=black@0.6:boxborderw=10,"
-        f"drawtext=text='Delft, Nederland':fontsize={int(settings.font_size * 0.5)}:fontcolor={settings.font_color}:x=(w-tw)/2:y=h-80:box=1:boxcolor=black@0.6:boxborderw=8[v]",
+        # Simple 3-layer text overlay
+        f"[1:v]drawtext=text='Reinier de Graaf Radio Server':"
+        f"fontsize={int(settings.font_size * 0.7)}:"
+        f"fontcolor={settings.font_color}:"
+        f"x=(w-tw)/2:y=80:"
+        f"box=1:boxcolor=black@0.7:boxborderw=10,"
+        
+        # Current date and time - using gmtime for reliability
+        f"drawtext=text='%{{gmtime\\:%d-%m-%Y  %H\\:%M\\:%S}}':"
+        f"fontsize={settings.font_size}:"
+        f"fontcolor={settings.font_color}:"
+        f"x=(w-tw)/2:y=(h-th)/2:"
+        f"box=1:boxcolor=black@0.7:boxborderw=12,"
+        
+        f"drawtext=text='Delft, Nederland':"
+        f"fontsize={int(settings.font_size * 0.6)}:"
+        f"fontcolor={settings.font_color}:"
+        f"x=(w-tw)/2:y=h-120:"
+        f"box=1:boxcolor=black@0.7:boxborderw=10[v]",
+        
         '-map', '[v]',
         '-map', '0:a',
         '-c:v', 'libx264',
@@ -162,10 +200,13 @@ async def start_stream():
     
     # Check if already running
     if ffmpeg_process and ffmpeg_process.poll() is None:
+        settings = await db.stream_settings.find_one()
+        stream_url = get_stream_url(StreamSettings(**settings))
         return StreamStatus(
             is_running=True,
             pid=ffmpeg_process.pid,
-            message="Stream is al actief"
+            message="Stream is al actief",
+            stream_url=stream_url
         )
     
     # Get settings
@@ -179,17 +220,12 @@ async def start_stream():
     cmd = build_ffmpeg_command(settings)
     
     try:
-        # Set timezone environment variable for FFmpeg
-        env = os.environ.copy()
-        env['TZ'] = 'Europe/Amsterdam'
-        
         # Start FFmpeg process
         ffmpeg_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            preexec_fn=os.setsid,  # Create new process group
-            env=env
+            preexec_fn=os.setsid
         )
         
         # Update running status in database
@@ -201,10 +237,13 @@ async def start_stream():
         logger.info(f"Started FFmpeg stream with PID: {ffmpeg_process.pid}")
         logger.info(f"Command: {' '.join(cmd)}")
         
+        stream_url = get_stream_url(settings)
+        
         return StreamStatus(
             is_running=True,
             pid=ffmpeg_process.pid,
-            message="Stream succesvol gestart"
+            message="Stream succesvol gestart",
+            stream_url=stream_url
         )
     
     except Exception as e:
@@ -224,7 +263,8 @@ async def stop_stream():
         return StreamStatus(
             is_running=False,
             pid=None,
-            message="Stream is niet actief"
+            message="Stream is niet actief",
+            stream_url=None
         )
     
     try:
@@ -252,7 +292,8 @@ async def stop_stream():
         return StreamStatus(
             is_running=False,
             pid=None,
-            message="Stream succesvol gestopt"
+            message="Stream succesvol gestopt",
+            stream_url=None
         )
     
     except Exception as e:
@@ -268,6 +309,8 @@ async def get_status():
     
     # Get database status
     settings = await db.stream_settings.find_one()
+    stream_url = None
+    
     if settings:
         db_running = settings.get('is_running', False)
         
@@ -277,12 +320,27 @@ async def get_status():
                 {},
                 {"$set": {"is_running": is_running}}
             )
+        
+        if is_running:
+            stream_url = get_stream_url(StreamSettings(**settings))
     
     return StreamStatus(
         is_running=is_running,
         pid=ffmpeg_process.pid if is_running else None,
-        message="Stream is actief" if is_running else "Stream is gestopt"
+        message="Stream is actief" if is_running else "Stream is gestopt",
+        stream_url=stream_url
     )
+
+def get_stream_url(settings: StreamSettings) -> str:
+    """Generate stream URL based on settings"""
+    server_ip = get_server_ip()
+    
+    if settings.output_mode == "multicast":
+        return f"udp://@{settings.multicast_address}"
+    elif settings.output_mode == "http":
+        return f"http://{server_ip}:{settings.http_port}/stream.ts"
+    else:  # unicast
+        return f"udp://@{settings.unicast_ip}"
 
 # Include the router in the main app
 app.include_router(api_router)
