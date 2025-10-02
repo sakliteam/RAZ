@@ -226,21 +226,54 @@ function App() {
 
               {/* Output Mode */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="output_mode">Multicast Modus</Label>
-                  <Switch
-                    id="output_mode"
-                    data-testid="output-mode-switch"
-                    checked={settings.output_mode === "multicast"}
-                    onCheckedChange={(checked) => 
-                      setSettings({...settings, output_mode: checked ? "multicast" : "unicast"})
-                    }
-                    disabled={status.is_running}
-                  />
+                <Label>Output Modus</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="mode_multicast"
+                      name="output_mode"
+                      value="multicast"
+                      checked={settings.output_mode === "multicast"}
+                      onChange={(e) => setSettings({...settings, output_mode: e.target.value})}
+                      disabled={status.is_running}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="mode_multicast" className="font-normal cursor-pointer">
+                      Multicast (UDP broadcast)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="mode_unicast"
+                      name="output_mode"
+                      value="unicast"
+                      checked={settings.output_mode === "unicast"}
+                      onChange={(e) => setSettings({...settings, output_mode: e.target.value})}
+                      disabled={status.is_running}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="mode_unicast" className="font-normal cursor-pointer">
+                      Unicast (Specifiek IP)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="mode_http"
+                      name="output_mode"
+                      value="http"
+                      checked={settings.output_mode === "http"}
+                      onChange={(e) => setSettings({...settings, output_mode: e.target.value})}
+                      disabled={status.is_running}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="mode_http" className="font-normal cursor-pointer">
+                      HTTP Stream (MPEG-TS)
+                    </Label>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400">
-                  {settings.output_mode === "multicast" ? "Multicast actief" : "Unicast actief"}
-                </p>
               </div>
 
               {/* Unicast IP */}
