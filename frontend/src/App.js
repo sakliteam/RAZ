@@ -21,6 +21,7 @@ function App() {
     output_mode: "multicast",
     unicast_ip: "127.0.0.1:5000",
     multicast_address: "239.255.0.1:5000",
+    http_port: 8080,
     font_size: 72,
     font_color: "white"
   });
