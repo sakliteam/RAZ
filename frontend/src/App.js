@@ -29,7 +29,8 @@ function App() {
   const [status, setStatus] = useState({
     is_running: false,
     pid: null,
-    message: ""
+    message: "",
+    stream_url: null
   });
   
   const [loading, setLoading] = useState(true);
