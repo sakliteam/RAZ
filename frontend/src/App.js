@@ -309,6 +309,27 @@ function App() {
                 </div>
               )}
 
+              {/* HTTP Port */}
+              {settings.output_mode === "http" && (
+                <div className="space-y-2">
+                  <Label htmlFor="http_port">HTTP Poort</Label>
+                  <Input
+                    id="http_port"
+                    data-testid="http-port-input"
+                    type="number"
+                    min="1024"
+                    max="65535"
+                    value={settings.http_port}
+                    onChange={(e) => setSettings({...settings, http_port: parseInt(e.target.value)})}
+                    placeholder="8080"
+                    disabled={status.is_running}
+                  />
+                  <p className="text-xs text-gray-400">
+                    Stream URL: http://[SERVER_IP]:{settings.http_port}/stream.ts
+                  </p>
+                </div>
+              )}
+
               {/* Font Size */}
               <div className="space-y-2">
                 <Label htmlFor="font_size">Lettergrootte (TV overlay)</Label>
